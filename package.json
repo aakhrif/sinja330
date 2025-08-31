@@ -1,0 +1,73 @@
+{
+  "name": "solana-volume-bot",
+  "version": "1.0.0",
+  "description": "Robust Solana volume trading bot with wallet backup system",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron .",
+    "dev": "tsc && electron . --dev",
+    "dev-inspect": "tsc && electron . --dev --inspect",
+    "watch": "tsc --watch",
+    "dist": "npm run build && electron-builder",
+    "dist-win": "npm run build && electron-builder --win",
+    "pack": "npm run build && electron-packager . --platform=win32 --arch=x64 --out=release --overwrite"
+  },
+  "keywords": [
+    "electron",
+    "solana",
+    "trading",
+    "bot",
+    "typescript"
+  ],
+  "author": "Volume Bot Developer",
+  "license": "MIT",
+  "build": {
+    "appId": "com.volumebot.solana",
+    "productName": "Solana Volume Bot",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules",
+        "to": "node_modules",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "beforeBuild": null,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "electron": "^27.0.0",
+    "electron-builder": "^26.0.12",
+    "electron-packager": "^17.1.2",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@jup-ag/api": "^6.0.44",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.87.6",
+    "axios": "^1.11.0",
+    "bs58": "^5.0.0"
+  }
+}

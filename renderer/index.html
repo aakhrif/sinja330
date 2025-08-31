@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Volume Bot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+            min-height: 100vh;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-button.active {
+            background-color: #6366f1;
+            color: white;
+            border-bottom: 2px solid #818cf8;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button:hover {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .log-entry {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+            background: rgba(30, 27, 75, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+        }
+        .glass-panel {
+            background: rgba(30, 27, 75, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        .input-field {
+            background: rgba(30, 27, 75, 0.6);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #e0e7ff;
+        }
+        .input-field:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            outline: none;
+        }
+        .input-field::placeholder {
+            color: #a5b4fc;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-100">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="glass-panel rounded-lg shadow-xl p-6 mb-6">
+            <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-2">Solana Volume Bot</h1>
+            <p class="text-indigo-200">Robust volume trading with wallet safety priority</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="glass-panel rounded-lg shadow-xl mb-6">
+            <div class="flex border-b border-purple-500/30">
+                <button class="tab-button active px-6 py-3 font-medium text-indigo-200 border-b-2 border-transparent" 
+                        onclick="switchTab('trading')">Trading</button>
+                <button class="tab-button px-6 py-3 font-medium text-indigo-200 border-b-2 border-transparent" 
+                        onclick="switchTab('wallets')">Wallets Overview</button>
+                <button class="tab-button px-6 py-3 font-medium text-indigo-200 border-b-2 border-transparent" 
+                        onclick="switchTab('recovery')">Recovery</button>
+                <button class="tab-button px-6 py-3 font-medium text-indigo-200 border-b-2 border-transparent" 
+                        onclick="switchTab('backups')">Backups</button>
+            </div>
+
+            <!-- Trading Tab -->
+            <div id="trading" class="tab-content active p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Configuration Panel -->
+                    <div class="glass-panel rounded-lg p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-purple-300">Trading Configuration</h2>
+                        <form id="tradingForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-indigo-200 mb-2">Token Address</label>
+                                <input type="text" id="tokenAddress" 
+                                       class="w-full px-3 py-2 input-field rounded-md"
+                                       placeholder="Enter Solana token address">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-indigo-200 mb-2">Main Wallet Private Key</label>
+                                <input type="password" id="mainWalletKey" 
+                                       class="w-full px-3 py-2 input-field rounded-md"
+                                       placeholder="Enter main wallet private key">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-indigo-200 mb-2">Sub-wallets</label>
+                                    <input type="text" id="subWalletCount" value="3"
+                                           class="w-full px-3 py-2 input-field rounded-md"
+                                           placeholder="Number of sub-wallets">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-indigo-200 mb-2">Buy Amount (SOL)</label>
+                                    <input type="text" id="buyAmount" value="0.005"
+                                           class="w-full px-3 py-2 input-field rounded-md"
+                                           placeholder="SOL amount per trade">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="opacity-50">
+                                    <label class="block text-sm font-medium text-indigo-200 mb-2">Cycle Interval (disabled - continuous trading)</label>
+                                    <input type="text" id="cycleInterval" value="Continuous"
+                                           class="w-full px-3 py-2 input-field rounded-md bg-gray-600 cursor-not-allowed"
+                                           placeholder="Continuous trading enabled" disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-indigo-200 mb-2">Session Duration (minutes)</label>
+                                    <input type="text" id="sessionDuration" value="3"
+                                           class="w-full px-3 py-2 input-field rounded-md"
+                                           placeholder="Total session time">
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Control Buttons -->
+                        <div class="flex space-x-4 mt-6">
+                            <button onclick="saveConfig()" 
+                                    class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105">
+                                Save Config
+                            </button>
+                            <button id="startBot" onclick="startBot()" 
+                                    class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-md hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105">
+                                Start Bot
+                            </button>
+                            <button id="stopBot" onclick="stopBot()" disabled
+                                    class="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-md hover:from-red-600 hover:to-red-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none">
+                                Stop Bot
+                            </button>
+                        </div>
+
+                        <!-- Bot Status -->
+                        <div id="botStatus" class="mt-4 p-3 glass-panel rounded-md">
+                            <span class="font-medium text-purple-300">Status:</span> <span id="statusText" class="text-indigo-200">Stopped</span>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Panel -->
+                    <div class="glass-panel rounded-lg p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-purple-300">Statistics</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="stat-card p-4 rounded-lg">
+                                <div class="text-2xl font-bold text-blue-400" id="cyclesCompleted">0</div>
+                                <div class="text-sm text-indigo-300">Cycles Completed</div>
+                            </div>
+                            <div class="stat-card p-4 rounded-lg">
+                                <div class="text-2xl font-bold text-green-400" id="totalVolume">0</div>
+                                <div class="text-sm text-indigo-300">Total Volume (SOL)</div>
+                            </div>
+                            <div class="stat-card p-4 rounded-lg">
+                                <div class="text-2xl font-bold text-purple-400" id="successRate">0%</div>
+                                <div class="text-sm text-indigo-300">Success Rate</div>
+                            </div>
+                            <div class="stat-card p-4 rounded-lg">
+                                <div class="text-2xl font-bold text-orange-400" id="totalFees">0</div>
+                                <div class="text-sm text-indigo-300">Total Fees (SOL)</div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="stat-card p-4 rounded-lg">
+                                <div class="text-lg font-bold text-cyan-400" id="uptime">00:00:00</div>
+                                <div class="text-sm text-indigo-300">Uptime</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Log -->
+                <div class="mt-6 glass-panel rounded-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-purple-300">Activity Log</h2>
+                    <div id="activityLog" class="h-64 overflow-y-auto bg-black/30 rounded-lg p-4 space-y-2 border border-purple-500/20">
+                        <div class="text-indigo-300 text-sm">Waiting for bot to start...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wallets Overview Tab -->
+            <div id="wallets" class="tab-content p-6">
+                <h2 class="text-xl font-semibold mb-4 text-purple-300">Wallets Overview</h2>
+                <button onclick="refreshWallets()" class="mb-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105">
+                    Refresh Balances
+                </button>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Main Wallets -->
+                    <div>
+                        <h3 class="text-lg font-medium mb-3 text-purple-300">Main Wallets</h3>
+                        <div id="mainWalletsList" class="space-y-3">
+                            <div class="text-indigo-300">Loading wallets...</div>
+                        </div>
+                    </div>
+
+                    <!-- Sub Wallets -->
+                    <div>
+                        <h3 class="text-lg font-medium mb-3 text-purple-300">Sub Wallets</h3>
+                        <div id="subWalletsList" class="space-y-3">
+                            <div class="text-indigo-300">Loading wallets...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Balance -->
+                <div class="mt-6 glass-panel rounded-lg p-4">
+                    <div class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400" id="totalBalance">0 SOL</div>
+                    <div class="text-indigo-300">Total Balance Across All Wallets</div>
+                </div>
+            </div>
+
+            <!-- Recovery Tab -->
+            <div id="recovery" class="tab-content p-6">
+                <h2 class="text-xl font-semibold mb-4 text-purple-300">Fund Recovery</h2>
+                <div class="bg-yellow-900/50 border border-yellow-600/50 rounded-lg p-4 mb-6">
+                    <div class="flex items-center">
+                        <div class="text-yellow-300">
+                            <svg class="w-5 h-5 mr-2 inline" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            <strong>Warning:</strong> This will recover all funds from all wallets in all backup files to your main wallet.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-lg p-6 border">
+                    <h3 class="text-lg font-medium mb-4 text-purple-300">Recovery Configuration</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-indigo-200 mb-2">Main Wallet Private Key</label>
+                            <input type="password" id="recoveryMainWalletKey"
+                                   class="w-full px-3 py-2 input-field rounded-md"
+                                   placeholder="Enter main wallet private key for recovery">
+                            <div class="text-xs text-indigo-400 mt-1">Auto-filled from trading config or enter manually</div>
+                        </div>
+                        <button onclick="startRecovery()" 
+                                class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 rounded-md hover:from-orange-600 hover:to-orange-700 transition-all transform hover:scale-105 font-medium">
+                            Start Fund Recovery
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recovery Log -->
+                <div class="mt-6 glass-panel rounded-lg p-6 border">
+                    <h3 class="text-lg font-medium mb-4 text-purple-300">Recovery Log</h3>
+                    <div id="recoveryLog" class="h-64 overflow-y-auto bg-black/30 rounded-lg p-4 border border-purple-500/20">
+                        <div class="text-indigo-300 text-sm">No recovery operations yet...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backups Tab -->
+            <div id="backups" class="tab-content p-6">
+                <h2 class="text-xl font-semibold mb-4 text-purple-300">Wallet Backups</h2>
+                <button onclick="refreshBackups()" class="mb-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105">
+                    Refresh Backups
+                </button>
+                
+                <div id="backupsList" class="space-y-4">
+                    <div class="text-indigo-300">Loading backup files...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
