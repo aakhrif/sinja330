@@ -490,7 +490,7 @@ export class TradingBot extends EventEmitter {
             inputMint: 'So11111111111111111111111111111111111111112', // SOL mint
             outputMint: tokenAddress,
             amount: Math.floor(safeAmount * 1000000000), // Convert SOL to lamports (use safe amount)
-            slippageBps: 3000, // 30% slippage tolerance for volatile tokens
+            slippageBps: 100, // 30% slippage tolerance for volatile tokens
           }
         });
 
@@ -579,7 +579,7 @@ export class TradingBot extends EventEmitter {
             inputMint: tokenAddress,
             outputMint: 'So11111111111111111111111111111111111111112', // SOL mint
             amount: tokenBalance.value.amount, // Sell all tokens
-            slippageBps: 3000, // 30% slippage tolerance for volatile tokens
+            slippageBps: 100, // 1% slippage tolerance for volatile tokens
           }
         });
 

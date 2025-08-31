@@ -350,7 +350,7 @@ export class WalletManager extends EventEmitter {
             inputMint: tokenAddress,
             outputMint: 'So11111111111111111111111111111111111111112', // SOL
             amount: tokenAccount.value.amount,
-            slippageBps: 300 // 3% slippage
+            slippageBps: 100 // 3% slippage
           }
         });
 
