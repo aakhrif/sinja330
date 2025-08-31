@@ -560,8 +560,19 @@ export class TradingBot extends EventEmitter {
         // Wait for confirmation
         await this.connection.confirmTransaction(signature, 'confirmed');
         
-        // Use realistic fee estimation based on Jupiter swap complexity
-        this.stats.totalFees += 0.002; // More realistic fee for Jupiter swap
+        // Get actual transaction fee from blockchain
+        try {
+          const txDetails = await this.connection.getTransaction(signature, {
+            commitment: 'confirmed'
+          });
+          const actualFee = txDetails?.meta?.fee || 0; // In lamports
+          const actualFeeSOL = actualFee / 1000000000;  // Convert to SOL
+          this.stats.totalFees += actualFeeSOL; // Add real fee from blockchain
+        } catch (error) {
+          // Fallback if fee reading fails
+          this.stats.totalFees += 0.000035; // Fallback based on your observed average
+        }
+        
         this.stats.totalVolume += amount; // Actual SOL amount used for buying
         this.log('success', `REAL TOKEN BUY completed: ${amount} SOL swapped to ${tokenAddress} from wallet ${wallet.publicKey.substring(0, 8)}...`, { signature });
         
@@ -650,8 +661,19 @@ export class TradingBot extends EventEmitter {
         // Wait for confirmation
         await this.connection.confirmTransaction(signature, 'confirmed');
         
-        // Use realistic fee estimation for Jupiter swap  
-        this.stats.totalFees += 0.002; // More realistic fee for Jupiter swap
+        // Get actual transaction fee from blockchain
+        try {
+          const txDetails = await this.connection.getTransaction(signature, {
+            commitment: 'confirmed'
+          });
+          const actualFee = txDetails?.meta?.fee || 0; // In lamports
+          const actualFeeSOL = actualFee / 1000000000;  // Convert to SOL
+          this.stats.totalFees += actualFeeSOL; // Add real fee from blockchain
+        } catch (error) {
+          // Fallback if fee reading fails
+          this.stats.totalFees += 0.000035; // Fallback based on your observed average
+        }
+        
         const sellAmountSOL = parseFloat(quoteResponse.data.outAmount) / 1000000000; // Convert lamports to SOL
         this.stats.totalVolume += sellAmountSOL; // Actual SOL amount received from selling
         this.log('success', `REAL TOKEN SELL completed: ${tokenAddress} sold for ${sellAmountSOL} SOL from wallet ${wallet.publicKey.substring(0, 8)}...`, { signature });
