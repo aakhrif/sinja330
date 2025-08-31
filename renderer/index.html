@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Volume Bot</title>
+    <title>TradeSphere Volume Bot</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -95,6 +95,13 @@
                         <h2 class="text-xl font-semibold mb-4 text-purple-300">Trading Configuration</h2>
                         <form id="tradingForm" class="space-y-4">
                             <div>
+                                <label class="block text-sm font-medium text-indigo-200 mb-2">🔑 License Key</label>
+                                <input type="text" id="licenseKey" 
+                                       class="w-full px-3 py-2 input-field rounded-md"
+                                       placeholder="VB-xxxxx.xxxxx (24h validity)">
+                                <div id="licenseStatus" class="text-xs mt-1"></div>
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-indigo-200 mb-2">Token Address</label>
                                 <input type="text" id="tokenAddress" 
                                        class="w-full px-3 py-2 input-field rounded-md"
@@ -127,11 +134,11 @@
                                            class="w-full px-3 py-2 input-field rounded-md bg-gray-600 cursor-not-allowed"
                                            placeholder="Continuous trading enabled" disabled>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-indigo-200 mb-2">Session Duration (minutes)</label>
-                                    <input type="text" id="sessionDuration" value="3"
-                                           class="w-full px-3 py-2 input-field rounded-md"
-                                           placeholder="Total session time">
+                                <div class="opacity-50">
+                                    <label class="block text-sm font-medium text-indigo-200 mb-2">Session Duration (disabled - continuous trading)</label>
+                                    <input type="text" id="sessionDuration" value="Continuous"
+                                           class="w-full px-3 py-2 input-field rounded-md bg-gray-600 cursor-not-allowed"
+                                           placeholder="Continuous trading enabled" disabled>
                                 </div>
                             </div>
                         </form>

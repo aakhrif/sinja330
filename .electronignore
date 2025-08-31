@@ -1,0 +1,45 @@
+# License generator (NEVER include in distribution)
+scripts/license-generator.js
+scripts/
+
+# Source files
+src/
+*.ts
+tsconfig.json
+
+# Development files
+.gitignore
+.git/
+.vscode/
+.idea/
+
+# Node modules (handled separately)
+node_modules/
+
+# Tests
+tests/
+*.test.js
+*.spec.js
+
+# Documentation
+README.md
+docs/
+
+# Build artifacts that shouldn't be included
+*.log
+npm-debug.log*
+
+# Wallet backups (sensitive)
+wallet-backups/
+
+# Environment files
+.env*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development scripts
+check-handlers.js
+test-functionality.js
+validate-ipc.js

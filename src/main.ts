@@ -3,6 +3,7 @@ import * as path from 'path';
 import { WalletManager } from './services/WalletManager';
 import { TradingBot } from './services/TradingBot';
 import { BackupManager } from './services/BackupManager';
+import { LicenseManager } from './services/LicenseManager';
 
 class MainProcess {
   private mainWindow: BrowserWindow | null = null;
@@ -47,7 +48,7 @@ class MainProcess {
         contextIsolation: false
       },
       icon: path.join(__dirname, '../assets/icon.png'),
-      title: 'Solana Volume Bot'
+      title: 'TradeSphere Volume Bot'
     });
 
     this.mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
@@ -87,6 +88,17 @@ class MainProcess {
         console.error('Error getting balances:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return { success: false, error: errorMessage };
+      }
+    });
+
+    // License validation
+    ipcMain.handle('validate-license', async (_event, licenseKey: string) => {
+      try {
+        const validation = LicenseManager.validateLicenseKey(licenseKey);
+        return validation;
+      } catch (error) {
+        console.error('Error validating license:', error);
+        return { valid: false, error: 'Failed to validate license key' };
       }
     });
 

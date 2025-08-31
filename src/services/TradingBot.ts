@@ -4,6 +4,7 @@ import * as bs58 from 'bs58';
 import axios from 'axios';
 import { WalletManager } from './WalletManager';
 import { BackupManager } from './BackupManager';
+import { LicenseManager } from './LicenseManager';
 
 export interface TradingConfig {
   tokenAddress: string;
@@ -11,6 +12,7 @@ export interface TradingConfig {
   numberOfSubWallets: number;
   buyAmount: number; // in SOL
   sessionDuration: number; // in minutes
+  licenseKey: string; // License key for validation
 }
 
 export interface TradingStats {
@@ -79,6 +81,15 @@ export class TradingBot extends EventEmitter {
         return { success: false, error: 'Bot is already running' };
       }
 
+      // 🔑 VALIDATE LICENSE KEY FIRST
+      const licenseValidation = LicenseManager.validateLicenseKey(config.licenseKey);
+      if (!licenseValidation.valid) {
+        this.log('error', `License validation failed: ${licenseValidation.error}`);
+        return { success: false, error: `Invalid license: ${licenseValidation.error}` };
+      }
+
+      this.log('success', `License valid until ${licenseValidation.expiresAt?.toLocaleString()} (${licenseValidation.remainingTime} remaining)`);
+
       this.config = config;
       this.resetStats();
       this.stats.startTime = Date.now();
@@ -123,11 +134,34 @@ export class TradingBot extends EventEmitter {
           const additionalResult = await this.walletManager.createSubWallets(additionalNeeded);
           if (additionalResult.success && additionalResult.wallets) {
             this.subWallets.push(...additionalResult.wallets);
+            console.log(`✅ Successfully added ${additionalResult.wallets.length} new wallets`);
             
             console.log(`🔍 AFTER ADDING NEW WALLETS:`);
             this.subWallets.forEach((wallet, index) => {
               console.log(`  [${index}] ${wallet.publicKey.substring(0, 8)}...`);
             });
+          } else {
+            console.log(`❌ Failed to create additional wallets: ${additionalResult.error}`);
+            this.log('error', `Failed to create ${additionalNeeded} additional wallets: ${additionalResult.error}`);
+          }
+        }
+      }
+
+      // Final validation: Ensure we have the correct number of wallets
+      if (this.subWallets.length !== config.numberOfSubWallets) {
+        this.log('warning', `Expected ${config.numberOfSubWallets} wallets, but have ${this.subWallets.length} wallets`);
+        
+        // If we still don't have enough wallets, try one more time
+        if (this.subWallets.length < config.numberOfSubWallets) {
+          const stillNeeded = config.numberOfSubWallets - this.subWallets.length;
+          this.log('info', `Attempting to create ${stillNeeded} more wallets...`);
+          
+          const retryResult = await this.walletManager.createSubWallets(stillNeeded);
+          if (retryResult.success && retryResult.wallets) {
+            this.subWallets.push(...retryResult.wallets);
+            console.log(`🔄 RETRY: Successfully added ${retryResult.wallets.length} more wallets`);
+          } else {
+            this.log('error', `Retry failed: ${retryResult.error}`);
           }
         }
       }
@@ -434,7 +468,7 @@ export class TradingBot extends EventEmitter {
         
         if (buySuccess && sellSuccess) {
           successfulTrades++;
-          this.stats.totalVolume += this.config.buyAmount * 2; // Buy + Sell volume
+          // Volume wird bereits in executeBuy() und executeSell() korrekt gezählt
           this.log('success', `✅ Complete buy→sell cycle for wallet ${this.subWallets[i].publicKey.substring(0, 8)}...`);
         } else {
           this.log('warning', `⚠️ Incomplete cycle for wallet ${this.subWallets[i].publicKey.substring(0, 8)}... (Buy: ${buySuccess}, Sell: ${sellSuccess})`);
@@ -526,8 +560,9 @@ export class TradingBot extends EventEmitter {
         // Wait for confirmation
         await this.connection.confirmTransaction(signature, 'confirmed');
         
-        this.stats.totalFees += 0.0005; // Estimate fee
-        this.stats.totalVolume += amount;
+        // Use realistic fee estimation based on Jupiter swap complexity
+        this.stats.totalFees += 0.002; // More realistic fee for Jupiter swap
+        this.stats.totalVolume += amount; // Actual SOL amount used for buying
         this.log('success', `REAL TOKEN BUY completed: ${amount} SOL swapped to ${tokenAddress} from wallet ${wallet.publicKey.substring(0, 8)}...`, { signature });
         
         // Wait 2 seconds after successful transaction to avoid race conditions - but only if bot is still running
@@ -615,9 +650,10 @@ export class TradingBot extends EventEmitter {
         // Wait for confirmation
         await this.connection.confirmTransaction(signature, 'confirmed');
         
-        this.stats.totalFees += 0.0005; // Estimate fee
+        // Use realistic fee estimation for Jupiter swap  
+        this.stats.totalFees += 0.002; // More realistic fee for Jupiter swap
         const sellAmountSOL = parseFloat(quoteResponse.data.outAmount) / 1000000000; // Convert lamports to SOL
-        this.stats.totalVolume += sellAmountSOL;
+        this.stats.totalVolume += sellAmountSOL; // Actual SOL amount received from selling
         this.log('success', `REAL TOKEN SELL completed: ${tokenAddress} sold for ${sellAmountSOL} SOL from wallet ${wallet.publicKey.substring(0, 8)}...`, { signature });
         
         // Wait 2 seconds after successful transaction to avoid race conditions - but only if bot is still running

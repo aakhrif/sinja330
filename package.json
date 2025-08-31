@@ -31,7 +31,9 @@
     "files": [
       "dist/**/*",
       "renderer/**/*",
-      "package.json"
+      "package.json",
+      "!scripts/license-generator.js",
+      "!scripts/**/*"
     ],
     "extraResources": [
       {

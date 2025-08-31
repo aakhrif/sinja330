@@ -68,7 +68,8 @@ function saveConfig() {
         mainWalletPrivateKey: document.getElementById('mainWalletKey').value,
         numberOfSubWallets: document.getElementById('subWalletCount').value,
         buyAmount: document.getElementById('buyAmount').value,
-        sessionDuration: document.getElementById('sessionDuration').value
+        sessionDuration: 999, // Fixed for continuous trading
+        licenseKey: document.getElementById('licenseKey').value
         // cycleInterval entfernt - kontinuierliches Trading
     };
     
@@ -87,8 +88,14 @@ function loadConfig() {
             document.getElementById('subWalletCount').value = config.numberOfSubWallets || '3';
             document.getElementById('buyAmount').value = config.buyAmount || '0.005';
             // cycleInterval wird nicht mehr geladen - kontinuierliches Trading
-            document.getElementById('sessionDuration').value = config.sessionDuration || '3';
+            // sessionDuration wird nicht mehr geladen - kontinuierliches Trading
+            document.getElementById('licenseKey').value = config.licenseKey || '';
             document.getElementById('recoveryMainWalletKey').value = config.mainWalletPrivateKey || '';
+            
+            // Validate license if present
+            if (config.licenseKey) {
+                validateLicenseUI(config.licenseKey);
+            }
         } catch (error) {
             console.error('Error loading config:', error);
         }
@@ -102,12 +109,13 @@ async function startBot() {
         mainWalletPrivateKey: document.getElementById('mainWalletKey').value,
         numberOfSubWallets: parseInt(document.getElementById('subWalletCount').value),
         buyAmount: parseFloat(document.getElementById('buyAmount').value),
-        sessionDuration: parseInt(document.getElementById('sessionDuration').value)
+        sessionDuration: 999, // Fixed value for continuous trading
+        licenseKey: document.getElementById('licenseKey').value
         // cycleInterval entfernt - kontinuierliches Trading
     };
 
-    if (!config.tokenAddress || !config.mainWalletPrivateKey) {
-        alert('Please fill in all required fields.');
+    if (!config.tokenAddress || !config.mainWalletPrivateKey || !config.licenseKey) {
+        alert('Please fill in all required fields including the license key.');
         return;
     }
 
@@ -414,11 +422,49 @@ ipcRenderer.on('stats-update', (event, stats) => {
 
 // Auto-save config on changes
 document.addEventListener('DOMContentLoaded', function() {
-    const configFields = ['tokenAddress', 'mainWalletKey', 'subWalletCount', 'buyAmount', 'sessionDuration'];
+    const configFields = ['tokenAddress', 'mainWalletKey', 'subWalletCount', 'buyAmount', 'licenseKey'];
     configFields.forEach(id => {
         const element = document.getElementById(id);
         if (element) {
             element.addEventListener('input', saveConfig);
         }
     });
+    
+    // Add license validation on input
+    const licenseInput = document.getElementById('licenseKey');
+    if (licenseInput) {
+        licenseInput.addEventListener('input', function() {
+            const licenseKey = this.value;
+            if (licenseKey) {
+                validateLicenseUI(licenseKey);
+            } else {
+                document.getElementById('licenseStatus').innerHTML = '';
+            }
+        });
+    }
 });
+
+// License validation functions
+async function validateLicenseUI(licenseKey) {
+    const statusElement = document.getElementById('licenseStatus');
+    
+    if (!licenseKey) {
+        statusElement.innerHTML = '<span class="text-red-400">❌ License key required</span>';
+        return false;
+    }
+    
+    try {
+        const validation = await ipcRenderer.invoke('validate-license', licenseKey);
+        
+        if (validation.valid) {
+            statusElement.innerHTML = `<span class="text-green-400">✅ Valid until ${validation.expiresAt} (${validation.remainingTime} left)</span>`;
+            return true;
+        } else {
+            statusElement.innerHTML = `<span class="text-red-400">❌ ${validation.error}</span>`;
+            return false;
+        }
+    } catch (error) {
+        statusElement.innerHTML = '<span class="text-red-400">❌ Failed to validate license</span>';
+        return false;
+    }
+}

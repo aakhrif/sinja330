@@ -13,6 +13,9 @@ dist/
 # Wallet backups (sensitive)
 wallet-backups/
 
+# License generator (sensitive)
+scripts/license-generator.js
+
 # IDE files
 .vscode/
 .idea/
