@@ -252,9 +252,9 @@ export class WalletManager extends EventEmitter {
           const balance = await this.getBalance(wallet.publicKey);
           console.log(`  SOL balance in ${walletShort}: ${balance.toFixed(6)} SOL`);
           
-          if (balance > 0.000005) { // Use minimal fee - 5000 lamports
+          if (balance > 0.000001) { // Minimal threshold - 1000 lamports
             // Calculate transfer amount with minimal fee
-            const feeInSol = 0.000005; // 5000 lamports - minimal transaction fee
+            const feeInSol = 0.000001; // Minimal transaction fee
             const transferableAmount = balance - feeInSol;
             const transferLamports = Math.floor(transferableAmount * LAMPORTS_PER_SOL);
 
@@ -350,7 +350,7 @@ export class WalletManager extends EventEmitter {
             inputMint: tokenAddress,
             outputMint: 'So11111111111111111111111111111111111111112', // SOL
             amount: tokenAccount.value.amount,
-            slippageBps: 100 // 3% slippage
+            slippageBps: 10 // 3% slippage
           }
         });
 
@@ -410,7 +410,7 @@ export class WalletManager extends EventEmitter {
       // Check main wallet balance before starting
       const mainBalance = await this.connection.getBalance(mainKeypair.publicKey);
       const mainBalanceSOL = mainBalance / LAMPORTS_PER_SOL;
-      const totalNeeded = (amountPerWallet * subWalletAddresses.length) + 0.001; // Reduced transaction fees estimate
+      const totalNeeded = (amountPerWallet * subWalletAddresses.length) + 0.00001; // Minimal transaction fees
       
       console.log(`📊 Main wallet balance: ${mainBalanceSOL.toFixed(6)} SOL`);
       console.log(`💰 Total needed: ${totalNeeded.toFixed(6)} SOL for ${subWalletAddresses.length} wallets`);

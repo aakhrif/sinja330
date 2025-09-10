@@ -4,10 +4,10 @@
   "description": "Robust Solana volume trading bot with wallet backup system",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && xcopy assets dist\\assets\\ /E /I /Y",
     "start": "npm run build && electron .",
-    "dev": "tsc && electron . --dev",
-    "dev-inspect": "tsc && electron . --dev --inspect",
+    "dev": "tsc && xcopy assets dist\\assets\\ /E /I /Y && electron . --dev",
+    "dev-inspect": "tsc && xcopy assets dist\\assets\\ /E /I /Y && electron . --dev --inspect",
     "watch": "tsc --watch",
     "dist": "npm run build && electron-builder",
     "dist-win": "npm run build && electron-builder --win",
@@ -31,6 +31,7 @@
     "files": [
       "dist/**/*",
       "renderer/**/*",
+      "assets/**/*",
       "package.json",
       "!scripts/license-generator.js",
       "!scripts/**/*"
@@ -40,14 +41,17 @@
         "from": "node_modules",
         "to": "node_modules",
         "filter": [
-          "**/*"
+          "**/*",
+          "!**/bigint-buffer/**"
         ]
       }
     ],
     "beforeBuild": null,
     "nodeGypRebuild": false,
     "buildDependenciesFromSource": false,
+    "npmRebuild": false,
     "win": {
+      "icon": "assets/trading_sphere-01.webp",
       "target": [
         {
           "target": "portable",

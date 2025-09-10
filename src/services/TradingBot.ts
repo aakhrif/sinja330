@@ -303,7 +303,7 @@ export class TradingBot extends EventEmitter {
     const result = await this.walletManager.distributeToSubWallets(
       this.config.mainWalletPrivateKey,
       subWalletAddresses,
-      this.config.buyAmount + 0.002 // Optimized: Minimal buffer for Jupiter + fees
+      this.config.buyAmount + 0.0001 // Minimal buffer for fees only
     );
 
     if (result.success && result.fundedWallets && result.fundedWallets.length > 0) {
@@ -510,12 +510,12 @@ export class TradingBot extends EventEmitter {
       const walletBalance = await this.connection.getBalance(walletKeypair.publicKey);
       const walletBalanceSOL = walletBalance / 1000000000;
       
-      if (walletBalanceSOL < amount + 0.001) { // Reduced: Minimal buffer for fees
-        throw new Error(`Insufficient balance: ${walletBalanceSOL} SOL, need ${amount + 0.001} SOL`);
+      if (walletBalanceSOL < amount + 0.0001) { // Minimal buffer for fees
+        throw new Error(`Insufficient balance: ${walletBalanceSOL} SOL, need ${amount + 0.0001} SOL`);
       }
       
       try {
-        // Use 90% of requested amount to leave buffer for slippage
+        // Use 90% of requested amount to ensure swap succeeds
         const safeAmount = amount * 0.9;
         
         // Get Jupiter quote for SOL to Token swap
@@ -524,7 +524,7 @@ export class TradingBot extends EventEmitter {
             inputMint: 'So11111111111111111111111111111111111111112', // SOL mint
             outputMint: tokenAddress,
             amount: Math.floor(safeAmount * 1000000000), // Convert SOL to lamports (use safe amount)
-            slippageBps: 100, // 30% slippage tolerance for volatile tokens
+            slippageBps: 10, // 0.1% slippage tolerance
           }
         });
 
@@ -625,7 +625,7 @@ export class TradingBot extends EventEmitter {
             inputMint: tokenAddress,
             outputMint: 'So11111111111111111111111111111111111111112', // SOL mint
             amount: tokenBalance.value.amount, // Sell all tokens
-            slippageBps: 100, // 1% slippage tolerance for volatile tokens
+            slippageBps: 10, // 0.1% slippage tolerance
           }
         });
 

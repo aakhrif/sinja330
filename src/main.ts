@@ -47,7 +47,7 @@ class MainProcess {
         nodeIntegration: true,
         contextIsolation: false
       },
-      icon: path.join(__dirname, '../assets/icon.png'),
+      icon: path.join(__dirname, 'assets/trading_sphere-01.webp'),
       title: 'TradeSphere Volume Bot'
     });
 
