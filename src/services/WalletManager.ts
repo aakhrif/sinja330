@@ -252,10 +252,10 @@ export class WalletManager extends EventEmitter {
           const balance = await this.getBalance(wallet.publicKey);
           console.log(`  SOL balance in ${walletShort}: ${balance.toFixed(6)} SOL`);
           
-          if (balance > 0.000001) { // Minimal threshold - 1000 lamports
-            // Calculate transfer amount with minimal fee
-            const feeInSol = 0.000001; // Minimal transaction fee
-            const transferableAmount = balance - feeInSol;
+          if (balance > 0.0001) { // Minimal threshold for transfer
+            // Calculate transfer amount with minimal buffer
+            const minBuffer = 0.001; // 20x less than full rent exemption
+            const transferableAmount = balance - minBuffer;
             const transferLamports = Math.floor(transferableAmount * LAMPORTS_PER_SOL);
 
             if (transferLamports > 0) {
@@ -276,19 +276,33 @@ export class WalletManager extends EventEmitter {
 
               transaction.sign(sourceKeypair);
               
-              // Send with minimal settings for lowest fees
-              const signature = await this.connection.sendRawTransaction(transaction.serialize(), {
-                skipPreflight: true, // Skip preflight to save on fees
-                preflightCommitment: 'finalized',
-                maxRetries: 1
-              });
+              // Send with proper validation and error handling
+              try {
+                const signature = await this.connection.sendRawTransaction(transaction.serialize(), {
+                  skipPreflight: false, // ENABLE validation
+                  preflightCommitment: 'confirmed',
+                  maxRetries: 3
+                });
 
-              // Wait for confirmation
-              await this.connection.confirmTransaction(signature, 'finalized');
+                console.log(`    Transaction sent: ${signature}`);
 
-              transactions.push(signature);
-              totalRecovered += transferableAmount;
-              console.log(`  ✓ Recovered ${transferableAmount.toFixed(6)} SOL from ${walletShort}`);
+                // Wait for confirmation with proper error handling
+                const confirmation = await this.connection.confirmTransaction(signature, 'confirmed');
+                
+                if (confirmation.value.err) {
+                  throw new Error(`Transaction failed on blockchain: ${JSON.stringify(confirmation.value.err)}`);
+                }
+
+                console.log(`    Transaction confirmed: ${signature}`);
+                transactions.push(signature);
+                totalRecovered += transferableAmount;
+                console.log(`  ✓ Recovered ${transferableAmount.toFixed(6)} SOL from ${walletShort}`);
+                
+              } catch (txError) {
+                const errorMsg = txError instanceof Error ? txError.message : 'Unknown transaction error';
+                console.error(`  ✗ Transaction failed for ${walletShort}: ${errorMsg}`);
+                // Don't add to recovered amount if transaction failed
+              }
             } else {
               console.log(`  ⚠ Amount too small to transfer from ${walletShort}`);
             }
@@ -410,7 +424,7 @@ export class WalletManager extends EventEmitter {
       // Check main wallet balance before starting
       const mainBalance = await this.connection.getBalance(mainKeypair.publicKey);
       const mainBalanceSOL = mainBalance / LAMPORTS_PER_SOL;
-      const totalNeeded = (amountPerWallet * subWalletAddresses.length) + 0.00001; // Minimal transaction fees
+      const totalNeeded = (amountPerWallet * subWalletAddresses.length) + 0.00001; // Ultra-minimal for multi-transfer
       
       console.log(`📊 Main wallet balance: ${mainBalanceSOL.toFixed(6)} SOL`);
       console.log(`💰 Total needed: ${totalNeeded.toFixed(6)} SOL for ${subWalletAddresses.length} wallets`);

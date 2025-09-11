@@ -303,7 +303,7 @@ export class TradingBot extends EventEmitter {
     const result = await this.walletManager.distributeToSubWallets(
       this.config.mainWalletPrivateKey,
       subWalletAddresses,
-      this.config.buyAmount + 0.0001 // Minimal buffer for fees only
+      this.config.buyAmount + 0.00001 // Ultra-minimal: only for transfer success
     );
 
     if (result.success && result.fundedWallets && result.fundedWallets.length > 0) {
@@ -510,8 +510,8 @@ export class TradingBot extends EventEmitter {
       const walletBalance = await this.connection.getBalance(walletKeypair.publicKey);
       const walletBalanceSOL = walletBalance / 1000000000;
       
-      if (walletBalanceSOL < amount + 0.0001) { // Minimal buffer for fees
-        throw new Error(`Insufficient balance: ${walletBalanceSOL} SOL, need ${amount + 0.0001} SOL`);
+      if (walletBalanceSOL < amount + 0.00001) { // Ultra-minimal buffer
+        throw new Error(`Insufficient balance: ${walletBalanceSOL} SOL, need ${amount + 0.00001} SOL`);
       }
       
       try {
