@@ -66,8 +66,8 @@ function saveConfig() {
     const config = {
         tokenAddress: document.getElementById('tokenAddress').value,
         mainWalletPrivateKey: document.getElementById('mainWalletKey').value,
-        numberOfSubWallets: document.getElementById('subWalletCount').value,
-        buyAmount: document.getElementById('buyAmount').value,
+        numberOfSubWallets: parseInt(document.getElementById('subWalletCount').value),
+        buyAmount: parseFloat(document.getElementById('buyAmount').value),
         sessionDuration: 999, // Fixed for continuous trading
         licenseKey: document.getElementById('licenseKey').value
         // cycleInterval entfernt - kontinuierliches Trading
@@ -85,7 +85,7 @@ function loadConfig() {
             const config = JSON.parse(saved);
             document.getElementById('tokenAddress').value = config.tokenAddress || '';
             document.getElementById('mainWalletKey').value = config.mainWalletPrivateKey || '';
-            document.getElementById('subWalletCount').value = config.numberOfSubWallets || '3';
+            document.getElementById('subWalletCount').value = config.numberOfSubWallets || '';
             document.getElementById('buyAmount').value = config.buyAmount || '0.005';
             // cycleInterval wird nicht mehr geladen - kontinuierliches Trading
             // sessionDuration wird nicht mehr geladen - kontinuierliches Trading

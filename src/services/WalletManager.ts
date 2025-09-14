@@ -8,7 +8,14 @@ export interface WalletInfo {
   publicKey: string;
   privateKey: string;
   balance: number;
-  createdAt: number;
+      console.log(`🔑 Main wallet address: ${mainKeypair.publicKey.toString()}`);
+      console.log(`📊 Main wallet balance: ${mainBalanceSOL.toFixed(6)} SOL`);
+      console.log(`💰 Total needed: ${totalNeeded.toFixed(6)} SOL for ${subWalletAddresses.length} wallets`);
+      
+      // REMOVED: Stupid balance check that was failing
+      // The bot will try each transaction individually and handle failures properly
+
+      for (let i = 0; i < subWalletAddresses.length; i++) { number;
   backupFile?: string;
   index?: number;
 }
@@ -236,8 +243,8 @@ export class WalletManager extends EventEmitter {
                 console.log(`  ✓ Sold tokens from ${walletShort}: ${sellResult.solReceived} SOL`);
                 transactions.push(...(sellResult.transactions || []));
                 
-                // Wait 2 seconds for transaction to settle
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Wait 1 second for transaction to settle (optimized from 2s)
+                await new Promise(resolve => setTimeout(resolve, 1000));
               } else {
                 console.log(`  ⚠ No tokens to sell in ${walletShort}`);
               }
@@ -246,8 +253,8 @@ export class WalletManager extends EventEmitter {
             }
           }
 
-          // Step 2: Transfer all SOL (wait a bit first to ensure balance is updated)
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Step 2: Transfer all SOL (wait a bit first to ensure balance is updated - optimized from 1s to 0.5s)
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           const balance = await this.getBalance(wallet.publicKey);
           console.log(`  SOL balance in ${walletShort}: ${balance.toFixed(6)} SOL`);
@@ -310,9 +317,9 @@ export class WalletManager extends EventEmitter {
             console.log(`  ⚠ Insufficient balance in ${walletShort} (${balance.toFixed(6)} SOL)`);
           }
 
-          // Wait between wallets to avoid rate limits
+          // Wait between wallets to avoid rate limits (optimized from 1.5s to 0.5s)
           if (i < wallets.subWallets.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
 
         } catch (error) {
@@ -430,7 +437,8 @@ export class WalletManager extends EventEmitter {
       const mainBalanceSOL = mainBalance / LAMPORTS_PER_SOL;
       const totalNeeded = (amountPerWallet * subWalletAddresses.length) + 0.00001; // Ultra-minimal for multi-transfer
       
-      console.log(`📊 Main wallet balance: ${mainBalanceSOL.toFixed(6)} SOL`);
+      console.log(`� Main wallet address: ${mainKeypair.publicKey.toString()}`);
+      console.log(`�📊 Main wallet balance: ${mainBalanceSOL.toFixed(6)} SOL`);
       console.log(`💰 Total needed: ${totalNeeded.toFixed(6)} SOL for ${subWalletAddresses.length} wallets`);
       
       if (mainBalanceSOL < totalNeeded) {

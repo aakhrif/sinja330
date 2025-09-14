@@ -95,6 +95,15 @@ export class TradingBot extends EventEmitter {
       this.stats.startTime = Date.now();
 
       this.log('info', 'Starting trading bot...', { config });
+      
+      // Debug: Log received configuration
+      console.log('🔍 RECEIVED CONFIG:', {
+        numberOfSubWallets: config.numberOfSubWallets,
+        type: typeof config.numberOfSubWallets,
+        tokenAddress: config.tokenAddress ? config.tokenAddress.substring(0, 8) + '...' : 'none',
+        buyAmount: config.buyAmount,
+        mainWalletKeyLength: config.mainWalletPrivateKey ? config.mainWalletPrivateKey.length : 0
+      });
 
       // Validate main wallet
       const mainKeypair = Keypair.fromSecretKey(bs58.decode(config.mainWalletPrivateKey));
@@ -106,6 +115,7 @@ export class TradingBot extends EventEmitter {
       
       if (allWallets.subWallets.length === 0) {
         this.log('info', 'No existing sub-wallets found, creating new ones...');
+        console.log(`🆕 Creating ${config.numberOfSubWallets} new sub-wallets...`);
         // Only create new wallets if none exist
         const subWalletsResult = await this.walletManager.createSubWallets(config.numberOfSubWallets);
         if (!subWalletsResult.success || !subWalletsResult.wallets) {
@@ -113,22 +123,24 @@ export class TradingBot extends EventEmitter {
         }
         this.subWallets = subWalletsResult.wallets;
       } else {
-        // Use ALL existing sub-wallets
-        this.subWallets = allWallets.subWallets.map(wallet => ({
+        // Use ONLY the number of wallets requested by config
+        const availableWallets = allWallets.subWallets.slice(0, config.numberOfSubWallets);
+        this.subWallets = availableWallets.map(wallet => ({
           publicKey: wallet.publicKey, // Keep as string, not PublicKey object
           privateKey: wallet.privateKey, // Use consistent naming
           balance: wallet.balance
         }));
-        this.log('info', `Found ${this.subWallets.length} existing sub-wallets from backup files`);
+        this.log('info', `Found ${allWallets.subWallets.length} existing sub-wallets, using ${config.numberOfSubWallets} of them`);
         
-        console.log(`🔍 DEBUGGING WALLET ARRAY:`);
-        this.subWallets.forEach((wallet, index) => {
-          console.log(`  [${index}] ${wallet.publicKey.substring(0, 8)}...`);
-        });
+        console.log(`🔍 DEBUGGING WALLET SELECTION:`);
+        console.log(`  Available: ${allWallets.subWallets.length}`);
+        console.log(`  Requested: ${config.numberOfSubWallets}`);
+        console.log(`  Will use: ${this.subWallets.length}`);
         
         // If we need more wallets than exist, create additional ones
         if (this.subWallets.length < config.numberOfSubWallets) {
           const additionalNeeded = config.numberOfSubWallets - this.subWallets.length;
+          console.log(`📈 Need to create ${additionalNeeded} additional wallets (have ${this.subWallets.length}, want ${config.numberOfSubWallets})`);
           this.log('info', `Creating ${additionalNeeded} additional sub-wallets...`);
           
           const additionalResult = await this.walletManager.createSubWallets(additionalNeeded);
@@ -422,10 +434,10 @@ export class TradingBot extends EventEmitter {
           this.log('warning', `❌ BUY failed for wallet ${wallet.publicKey.substring(0, 8)}: ${buyResult.error}`);
         }
         
-        // Wait 3 seconds between each buy to avoid rate limiting
+        // Wait 1 second between each buy to avoid rate limiting (optimized from 5s)
         if (i < this.subWallets.length - 1 && this.isRunning) {
-          this.log('info', 'Waiting 3 seconds before next wallet...');
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          this.log('info', 'Waiting 1 second before next wallet...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
       
@@ -454,10 +466,10 @@ export class TradingBot extends EventEmitter {
           this.log('warning', `❌ SELL failed for wallet ${wallet.publicKey.substring(0, 8)}: ${sellResult.error}`);
         }
         
-        // Wait 3 seconds between each sell to avoid rate limiting
+        // Wait 0.5 seconds between each sell to avoid rate limiting (optimized from 3s)
         if (i < this.subWallets.length - 1 && this.isRunning) {
-          this.log('info', 'Waiting 3 seconds before next wallet...');
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          this.log('info', 'Waiting 0.5 seconds before next wallet...');
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
       
@@ -483,18 +495,18 @@ export class TradingBot extends EventEmitter {
       this.log('info', `Continuous cycle ${this.stats.cyclesCompleted} completed: ${successfulTrades}/${this.subWallets.length} successful complete trades`);
       this.emit('stats-update', this.stats);
 
-      // Kurze Pause vor nächstem kontinuierlichen Zyklus
+      // Kurze Pause vor nächstem kontinuierlichen Zyklus (optimized from 3s to 0.2s)
       if (this.isRunning) {
-        this.log('info', 'Waiting 3 seconds before next continuous cycle...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        this.log('info', 'Waiting 0.2 seconds before next continuous cycle...');
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         this.log('error', 'Trading cycle failed', { error: errorMessage });
-        // Kurze Pause bei Fehler
+        // Kurze Pause bei Fehler (optimized from 5s to 2s)
         if (this.isRunning) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
     }
