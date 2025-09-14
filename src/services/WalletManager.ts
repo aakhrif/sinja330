@@ -377,7 +377,11 @@ export class WalletManager extends EventEmitter {
           quoteResponse: quoteResponse.data,
           userPublicKey: walletKeypair.publicKey.toString(),
           wrapAndUnwrapSol: true,
-          computeUnitPriceMicroLamports: 1 // Minimal compute unit price
+          computeUnitPriceMicroLamports: 1, // Minimal compute unit price
+          priorityLevelWithMaxLamports: {
+            priorityLevel: 'none', // No priority fees
+            maxLamports: 0
+          }
         });
 
         const { swapTransaction } = swapResponse.data;

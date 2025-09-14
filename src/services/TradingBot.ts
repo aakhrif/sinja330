@@ -532,11 +532,16 @@ export class TradingBot extends EventEmitter {
           throw new Error('No quote received from Jupiter');
         }
 
-        // Get Jupiter swap transaction
+        // Get Jupiter swap transaction with minimal fees
         const swapResponse = await axios.post('https://quote-api.jup.ag/v6/swap', {
           quoteResponse: quoteResponse.data,
           userPublicKey: walletKeypair.publicKey.toString(),
           wrapAndUnwrapSol: true,
+          computeUnitPriceMicroLamports: 1, // Minimal compute unit price (1 micro-lamport)
+          priorityLevelWithMaxLamports: {
+            priorityLevel: 'none', // No priority fees
+            maxLamports: 0
+          }
         });
 
         if (!swapResponse.data || !swapResponse.data.swapTransaction) {
@@ -633,11 +638,16 @@ export class TradingBot extends EventEmitter {
           throw new Error('No quote received from Jupiter for sell');
         }
 
-        // Get Jupiter swap transaction
+        // Get Jupiter swap transaction with minimal fees
         const swapResponse = await axios.post('https://quote-api.jup.ag/v6/swap', {
           quoteResponse: quoteResponse.data,
           userPublicKey: walletKeypair.publicKey.toString(),
           wrapAndUnwrapSol: true,
+          computeUnitPriceMicroLamports: 1, // Minimal compute unit price (1 micro-lamport)
+          priorityLevelWithMaxLamports: {
+            priorityLevel: 'none', // No priority fees
+            maxLamports: 0
+          }
         });
 
         if (!swapResponse.data || !swapResponse.data.swapTransaction) {
